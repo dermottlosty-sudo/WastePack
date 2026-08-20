@@ -660,3 +660,30 @@
             backBtn.style.display = 'none';
         }
     }
+
+    // ----- Export CSV -----
+    window.exportCSV = function() {
+        if (entries.length === 0) { showToast('⚠️ No data'); return; }
+        let csv = 'Reference,Department,Packaging Type,Material,Stream,Unit Weight(kg),Quantity,Total Weight(kg),Timestamp\n';
+        entries.forEach(e => {
+            csv += `${e.ref},${e.dept},${e.type},${e.material},${e.stream},${e.unitWeight},${e.qty},${e.totalWeight},${e.timestamp || ''}\n`;
+        });
+        const uri = encodeURI('data:text/csv;charset=utf-8,' + csv);
+        const link = document.createElement('a');
+        link.setAttribute('href', uri);
+        link.setAttribute('download', `pEPR_Data_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('✅ CSV exported');
+    };
+
+    // ----- Init -----
+    renderDepts();
+    renderAdminLists();
+    updateMaterials();
+    updateDashboard();
+    showToast('💾 Data loaded');
+</script>
+</body>
+</html>
