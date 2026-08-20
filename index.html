@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>pEPR Compliance · Mobile</title>
+    <title>pEPR Compliance · Analytics</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
@@ -17,7 +17,7 @@
             color: #1e2b37;
         }
         .container {
-            max-width: 600px;
+            max-width: 650px;
             margin: 0 auto;
         }
         h1 {
@@ -82,6 +82,40 @@
             align-items: center;
             gap: 8px;
         }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+        .chart-container {
+            height: 160px;
+            max-height: 160px;
+            position: relative;
+        }
+        canvas {
+            max-height: 160px;
+            max-width: 100%;
+        }
+        .chart-drill-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #1f3a4b;
+            text-align: center;
+            margin: 8px 0 4px;
+            min-height: 1.5em;
+        }
+        .btn-back {
+            background: #7f8c8d;
+            border: none;
+            color: white;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+        .btn-back:active { background: #5d6d7e; }
         label {
             display: block;
             font-size: 0.8rem;
@@ -130,172 +164,36 @@
             letter-spacing: 0.3px;
         }
         .btn:active { background: #13516b; transform: scale(0.97); }
-        .btn-danger {
-            background: #c0392b;
-        }
+        .btn-danger { background: #c0392b; }
         .btn-danger:active { background: #922b21; }
-        .btn-export {
-            background: #6d3b8a;
-            width: auto;
-            padding: 10px 18px;
-            font-size: 0.85rem;
-            float: right;
-            margin-top: 0;
-            border-radius: 30px;
-        }
+        .btn-export { background: #6d3b8a; width: auto; padding: 10px 18px; font-size: 0.85rem; float: right; margin-top: 0; border-radius: 30px; }
         .btn-export:active { background: #532b6b; }
-        .btn-clear {
-            background: #7f8c8d;
-            width: auto;
-            padding: 10px 18px;
-            font-size: 0.85rem;
-            float: left;
-            margin-top: 0;
-            border-radius: 30px;
-        }
+        .btn-clear { background: #7f8c8d; width: auto; padding: 10px 18px; font-size: 0.85rem; float: left; margin-top: 0; border-radius: 30px; }
         .btn-clear:active { background: #5d6d7e; }
-        .table-wrap {
-            overflow-x: auto;
-            margin-top: 8px;
-            -webkit-overflow-scrolling: touch;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.75rem;
-            min-width: 400px;
-        }
-        th {
-            background: #e9eef2;
-            color: #1f3a4b;
-            font-weight: 600;
-            padding: 10px 6px;
-            text-align: left;
-            white-space: nowrap;
-        }
-        td {
-            padding: 10px 6px;
-            border-bottom: 1px solid #eef3f6;
-            vertical-align: middle;
-        }
-        .ledger-stream {
-            font-weight: 600;
-            font-size: 0.7rem;
-            padding: 3px 8px;
-            border-radius: 30px;
-            background: #ecf0f3;
-            white-space: nowrap;
-        }
-        .admin-section {
-            margin-top: 24px;
-            border-top: 2px dashed #d0d9e0;
-            padding-top: 18px;
-        }
-        .admin-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            margin-top: 10px;
-        }
-        .admin-card {
-            background: #f6f9fb;
-            padding: 14px 12px;
-            border-radius: 16px;
-        }
-        .admin-card h4 {
-            font-size: 0.9rem;
-            margin: 0 0 8px 0;
-            color: #1f3a4b;
-        }
-        .flex-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .flex-row input {
-            flex: 1;
-            padding: 10px 12px;
-            font-size: 0.9rem;
-            border-radius: 30px;
-            background: white;
-        }
-        .flex-row button {
-            background: #1f3a4b;
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            width: 44px;
-            height: 44px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: 600;
-            flex-shrink: 0;
-            transition: 0.15s;
-        }
+        .table-wrap { overflow-x: auto; margin-top: 8px; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; min-width: 400px; }
+        th { background: #e9eef2; color: #1f3a4b; font-weight: 600; padding: 10px 6px; text-align: left; white-space: nowrap; }
+        td { padding: 10px 6px; border-bottom: 1px solid #eef3f6; vertical-align: middle; }
+        .ledger-stream { font-weight: 600; font-size: 0.7rem; padding: 3px 8px; border-radius: 30px; background: #ecf0f3; white-space: nowrap; }
+        .admin-section { margin-top: 24px; border-top: 2px dashed #d0d9e0; padding-top: 18px; }
+        .admin-grid { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+        .admin-card { background: #f6f9fb; padding: 14px 12px; border-radius: 16px; }
+        .admin-card h4 { font-size: 0.9rem; margin: 0 0 8px 0; color: #1f3a4b; }
+        .flex-row { display: flex; gap: 8px; align-items: center; }
+        .flex-row input { flex: 1; padding: 10px 12px; font-size: 0.9rem; border-radius: 30px; background: white; }
+        .flex-row button { background: #1f3a4b; border: none; color: white; font-size: 1.2rem; width: 44px; height: 44px; border-radius: 30px; cursor: pointer; font-weight: 600; flex-shrink: 0; transition: 0.15s; }
         .flex-row button:active { background: #0b2a3b; transform: scale(0.94); }
-        .admin-card ul {
-            list-style: none;
-            padding: 0;
-            margin: 12px 0 0;
-            max-height: 130px;
-            overflow-y: auto;
-        }
-        .admin-card li {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            border-bottom: 1px solid #e2e9ef;
-            font-size: 0.85rem;
-            align-items: center;
-        }
-        .admin-card li button {
-            background: #c0392b;
-            border: none;
-            color: white;
-            border-radius: 30px;
-            padding: 2px 12px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            font-weight: 600;
-        }
+        .admin-card ul { list-style: none; padding: 0; margin: 12px 0 0; max-height: 130px; overflow-y: auto; }
+        .admin-card li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e2e9ef; font-size: 0.85rem; align-items: center; }
+        .admin-card li button { background: #c0392b; border: none; color: white; border-radius: 30px; padding: 2px 12px; font-size: 0.7rem; cursor: pointer; font-weight: 600; }
         .admin-card li button:active { background: #922b21; }
-        .chart-container {
-            height: 180px;
-            max-height: 180px;
-            position: relative;
-            margin: 0 auto;
-        }
-        canvas {
-            max-height: 180px;
-            max-width: 100%;
-        }
         .clearfix::after { content: ""; display: table; clear: both; }
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1f3a4b;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-size: 0.9rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            z-index: 1000;
-        }
-        .toast.show {
-            opacity: 1;
-        }
-        .header-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        @media (max-width: 420px) {
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1f3a4b; color: white; padding: 12px 24px; border-radius: 30px; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 1000; }
+        .toast.show { opacity: 1; }
+        .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        @media (max-width: 480px) {
+            .chart-grid { grid-template-columns: 1fr; gap: 20px; }
+            .chart-container { height: 180px; max-height: 180px; }
             .box p { font-size: 1.0rem; }
             .box h3 { font-size: 0.6rem; }
             .box { padding: 10px 4px; min-width: 80px; }
@@ -307,7 +205,7 @@
 <body>
 <div class="container">
     <h1>♻️ pEPR Compliance</h1>
-    <div class="subhead">Packaging import ledger · data saved locally</div>
+    <div class="subhead">Packaging ledger · interactive analytics</div>
 
     <div class="summary-boxes">
         <div class="box total"><h3>Total</h3><p id="total-weight">0.00 kg</p></div>
@@ -321,46 +219,50 @@
         <form id="packaging-form">
             <label>Import ref / Order</label>
             <input type="text" id="ref" placeholder="e.g. INV-4231" required>
-
             <label>Department</label>
             <select id="department"></select>
-
             <label>Packaging Type</label>
             <select id="pack-type" required></select>
-
             <label>Material</label>
             <select id="material"></select>
-
             <label>Waste stream</label>
             <select id="stream">
                 <option value="Non-Household">Non-Household (B2B · exempt)</option>
                 <option value="Household">Household (fee applicable)</option>
             </select>
-
             <label>Unit weight (kg)</label>
             <input type="number" id="unit-weight" step="0.01" placeholder="0.00" required>
-
             <label>Quantity</label>
             <input type="number" id="qty" placeholder="1" required>
-
             <button type="submit" class="btn">➕ Add to ledger</button>
         </form>
     </div>
 
-    <!-- Chart + ledger -->
+    <!-- Analytics Charts -->
     <div class="card">
         <div class="clearfix">
-            <h2 style="display:inline-block;">📊 Stream split</h2>
+            <h2 style="display:inline-block;">📊 Packaging analysis</h2>
             <div style="float: right; display: flex; gap: 6px;">
                 <button class="btn-clear" onclick="clearAllData()">🗑 Clear</button>
                 <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
             </div>
         </div>
-        <div class="chart-container">
-            <canvas id="wasteChart"></canvas>
+        <div class="chart-grid">
+            <div>
+                <div class="chart-container"><canvas id="packTypeChart"></canvas></div>
+                <div class="chart-drill-title" id="packTypeTitle">Packaging Types</div>
+            </div>
+            <div>
+                <div class="chart-container"><canvas id="materialChart"></canvas></div>
+                <div class="chart-drill-title" id="materialDrillTitle">
+                    Materials
+                    <button class="btn-back" id="drillBackBtn" style="display:none;" onclick="resetMaterialDrill()">↩ Back</button>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Ledger -->
     <div class="card">
         <h2>📋 Compliance ledger <span style="font-size:0.7rem; font-weight:normal; color:#6a7f8d;" id="entry-count">(0 entries)</span></h2>
         <div class="table-wrap">
@@ -369,7 +271,7 @@
                 <tbody id="ledger-body"></tbody>
             </table>
         </div>
-        <div style="font-size:0.7rem; color:#6a7f8d; margin-top:6px;">Data saved automatically to your browser</div>
+        <div style="font-size:0.7rem; color:#6a7f8d; margin-top:6px;">Click a material in the chart to drill down to packaging types.</div>
     </div>
 
     <!-- ADMIN -->
@@ -389,11 +291,10 @@
                 <ul id="material-list"></ul>
             </div>
         </div>
-        <p style="font-size:0.7rem; color:#6f889b; margin:10px 0 0;">Changes saved to browser storage</p>
+        <p style="font-size:0.7rem; color:#6f889b; margin:10px 0 0;">Data saved to browser storage</p>
     </div>
 </div>
 
-<!-- Toast notification -->
 <div id="toast" class="toast"></div>
 
 <script>
@@ -405,38 +306,7 @@
         MATERIALS: 'pepr_materials'
     };
 
-    // ----- DATA (with persistence) -----
-    function loadData() {
-        try {
-            const savedDepts = localStorage.getItem(STORAGE_KEYS.DEPTS);
-            if (savedDepts) depts = JSON.parse(savedDepts);
-            
-            const savedPackTypes = localStorage.getItem(STORAGE_KEYS.PACK_TYPES);
-            if (savedPackTypes) packTypes = JSON.parse(savedPackTypes);
-            
-            const savedMaterials = localStorage.getItem(STORAGE_KEYS.MATERIALS);
-            if (savedMaterials) materials = JSON.parse(savedMaterials);
-            
-            const savedEntries = localStorage.getItem(STORAGE_KEYS.ENTRIES);
-            if (savedEntries) entries = JSON.parse(savedEntries);
-        } catch (e) {
-            console.warn('Error loading data from storage:', e);
-        }
-    }
-
-    function saveData() {
-        try {
-            localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(entries));
-            localStorage.setItem(STORAGE_KEYS.DEPTS, JSON.stringify(depts));
-            localStorage.setItem(STORAGE_KEYS.PACK_TYPES, JSON.stringify(packTypes));
-            localStorage.setItem(STORAGE_KEYS.MATERIALS, JSON.stringify(materials));
-        } catch (e) {
-            console.warn('Error saving data:', e);
-            showToast('⚠️ Storage full or unavailable');
-        }
-    }
-
-    // Default data (only used if nothing in storage)
+    // Default data
     let depts = ['Track', 'Fencing', 'Gates', 'Telegraph Poles'];
     let packTypes = {
         'Track': ['Metal Banding', 'Wooden Bearers', 'Lathes', 'Label', 'Staple', 'Metal Tag'],
@@ -448,27 +318,82 @@
     let entries = [];
     let b2bTotal = 0, householdTotal = 0;
 
-    // Load data from storage
+    // Drill-down state
+    let drillMaterial = null; // null = show all materials
+
+    // Load data
+    function loadData() {
+        try {
+            const savedDepts = localStorage.getItem(STORAGE_KEYS.DEPTS);
+            if (savedDepts) depts = JSON.parse(savedDepts);
+            const savedPackTypes = localStorage.getItem(STORAGE_KEYS.PACK_TYPES);
+            if (savedPackTypes) packTypes = JSON.parse(savedPackTypes);
+            const savedMaterials = localStorage.getItem(STORAGE_KEYS.MATERIALS);
+            if (savedMaterials) materials = JSON.parse(savedMaterials);
+            const savedEntries = localStorage.getItem(STORAGE_KEYS.ENTRIES);
+            if (savedEntries) entries = JSON.parse(savedEntries);
+        } catch (e) { console.warn('Load error:', e); }
+    }
+    function saveData() {
+        try {
+            localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(entries));
+            localStorage.setItem(STORAGE_KEYS.DEPTS, JSON.stringify(depts));
+            localStorage.setItem(STORAGE_KEYS.PACK_TYPES, JSON.stringify(packTypes));
+            localStorage.setItem(STORAGE_KEYS.MATERIALS, JSON.stringify(materials));
+        } catch (e) { console.warn('Save error:', e); showToast('⚠️ Storage full'); }
+    }
     loadData();
 
-    // ----- DOM refs -----
+    // DOM refs
     const deptSelect = document.getElementById('department');
     const packSelect = document.getElementById('pack-type');
     const materialSelect = document.getElementById('material');
     const ledgerBody = document.getElementById('ledger-body');
     const entryCount = document.getElementById('entry-count');
 
-    // ----- Chart -----
-    const ctx = document.getElementById('wasteChart').getContext('2d');
-    let chart = new Chart(ctx, {
+    // ----- Charts -----
+    const packTypeCtx = document.getElementById('packTypeChart').getContext('2d');
+    const materialCtx = document.getElementById('materialChart').getContext('2d');
+
+    let packTypeChart = new Chart(packTypeCtx, {
         type: 'doughnut',
-        data: { labels: ['Non-Household (exempt)', 'Household (fee)'], datasets: [{ data: [0, 0], backgroundColor: ['#1f8b4c', '#b03a2e'] }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
+        data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } } }
     });
+
+    let materialChart = new Chart(materialCtx, {
+        type: 'doughnut',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } },
+            onClick: (e, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const label = materialChart.data.labels[index];
+                    if (label && label !== 'No Data') {
+                        drillMaterial = label;
+                        updateCharts();
+                        document.getElementById('drillBackBtn').style.display = 'inline-block';
+                        document.getElementById('materialDrillTitle').innerHTML = `📌 ${label} <button class="btn-back" onclick="resetMaterialDrill()">↩ Back</button>`;
+                        showToast(`🔍 Showing packaging types for: ${label}`);
+                    }
+                }
+            }
+        }
+    });
+
+    function resetMaterialDrill() {
+        drillMaterial = null;
+        document.getElementById('drillBackBtn').style.display = 'none';
+        document.getElementById('materialDrillTitle').innerHTML = 'Materials <button class="btn-back" id="drillBackBtn" style="display:none;" onclick="resetMaterialDrill()">↩ Back</button>';
+        updateCharts();
+        showToast('📊 Showing all materials');
+    }
 
     // ----- Toast -----
     let toastTimeout;
-
     function showToast(msg) {
         const toast = document.getElementById('toast');
         toast.textContent = msg;
@@ -483,7 +408,6 @@
         depts.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.textContent = d; deptSelect.appendChild(opt); });
         updatePackTypes();
     }
-
     function updatePackTypes() {
         const dept = deptSelect.value;
         const types = packTypes[dept] || [];
@@ -492,14 +416,13 @@
         else { types.forEach(t => { const opt = document.createElement('option'); opt.value = t; opt.textContent = t; packSelect.appendChild(opt); }); }
         updateMaterials();
     }
-
     function updateMaterials() {
         materialSelect.innerHTML = '';
         materials.forEach(m => { const opt = document.createElement('option'); opt.value = m; opt.textContent = m; materialSelect.appendChild(opt); });
     }
     deptSelect.addEventListener('change', updatePackTypes);
 
-    // ----- Admin UI lists -----
+    // ----- Admin UI -----
     function renderAdminLists() {
         const deptList = document.getElementById('dept-list');
         deptList.innerHTML = '';
@@ -514,7 +437,7 @@
         materials.forEach(m => { const li = document.createElement('li'); li.innerHTML = `<span>${m}</span> <button onclick="removeMaterial('${m}')">✕</button>`; matList.appendChild(li); });
     }
 
-    // ----- Admin actions (with save) -----
+    // ----- Admin actions -----
     window.addDept = function() {
         const input = document.getElementById('new-dept');
         const val = input.value.trim();
@@ -549,14 +472,11 @@
         materials = materials.filter(m => m !== name);
         updateMaterials(); renderAdminLists(); saveData(); showToast('🗑 Material removed');
     };
-
-    // ----- Clear all data -----
     window.clearAllData = function() {
         if (entries.length === 0) { showToast('⚠️ No data to clear'); return; }
-        if (confirm('Delete ALL entries? This cannot be undone.')) {
+        if (confirm('Delete ALL entries?')) {
             entries = [];
-            b2bTotal = 0;
-            householdTotal = 0;
+            b2bTotal = 0; householdTotal = 0;
             saveData();
             updateDashboard();
             showToast('🗑 All entries cleared');
@@ -568,7 +488,7 @@
         e.preventDefault();
         const weight = parseFloat(document.getElementById('unit-weight').value);
         const qty = parseInt(document.getElementById('qty').value);
-        if (isNaN(weight) || isNaN(qty) || weight <= 0 || qty <= 0) { showToast('⚠️ Please enter valid weight and quantity'); return; }
+        if (isNaN(weight) || isNaN(qty) || weight <= 0 || qty <= 0) { showToast('⚠️ Valid weight & quantity'); return; }
         const total = weight * qty;
         const stream = document.getElementById('stream').value;
         const entry = {
@@ -584,8 +504,6 @@
             timestamp: new Date().toISOString()
         };
         entries.push(entry);
-        if (stream === 'Non-Household') b2bTotal += total;
-        else householdTotal += total;
         saveData();
         updateDashboard();
         this.reset();
@@ -593,23 +511,20 @@
         showToast('✅ Entry added');
     });
 
+    // ----- Update Dashboard (Charts + Ledger) -----
     function updateDashboard() {
-        // Recalculate totals
-        b2bTotal = 0;
-        householdTotal = 0;
+        // Recalc totals
+        b2bTotal = 0; householdTotal = 0;
         entries.forEach(e => {
             if (e.stream === 'Non-Household') b2bTotal += e.totalWeight;
             else householdTotal += e.totalWeight;
         });
-
         document.getElementById('total-weight').innerText = (b2bTotal + householdTotal).toFixed(2) + ' kg';
         document.getElementById('b2b-weight').innerText = b2bTotal.toFixed(2) + ' kg';
         document.getElementById('household-weight').innerText = householdTotal.toFixed(2) + ' kg';
-        chart.data.datasets[0].data = [b2bTotal, householdTotal];
-        chart.update();
-
         entryCount.textContent = `(${entries.length} entries)`;
 
+        // Ledger
         ledgerBody.innerHTML = '';
         entries.slice().reverse().forEach(e => {
             const streamLabel = e.stream === 'Non-Household' ? '🏢 B2B' : '🏠 HH';
@@ -622,11 +537,74 @@
                 <td>${e.totalWeight.toFixed(1)}</td>
             </tr>`;
         });
+
+        updateCharts();
+    }
+
+    // ----- Chart update logic (with drill) -----
+    function updateCharts() {
+        // --- Packaging Type Chart (always all data) ---
+        const typeTotals = {};
+        entries.forEach(e => {
+            typeTotals[e.type] = (typeTotals[e.type] || 0) + e.totalWeight;
+        });
+        const typeLabels = Object.keys(typeTotals);
+        const typeData = Object.values(typeTotals);
+        const colors = ['#3498db','#e67e22','#2ecc71','#e74c3c','#9b59b6','#1abc9c','#f39c12','#34495e','#d35400','#27ae60'];
+        packTypeChart.data.labels = typeLabels.length ? typeLabels : ['No Data'];
+        packTypeChart.data.datasets[0].data = typeLabels.length ? typeData : [1];
+        packTypeChart.data.datasets[0].backgroundColor = typeLabels.length ? colors.slice(0, typeLabels.length) : ['#bdc3c7'];
+        packTypeChart.update();
+        document.getElementById('packTypeTitle').textContent = typeLabels.length ? `Packaging Types (${typeLabels.length})` : 'No packaging data';
+
+        // --- Material Chart (with drill) ---
+        let filteredEntries = entries;
+        let drillLabel = 'Materials';
+        if (drillMaterial) {
+            filteredEntries = entries.filter(e => e.material === drillMaterial);
+            drillLabel = `📌 ${drillMaterial}`;
+        }
+
+        if (filteredEntries.length === 0) {
+            materialChart.data.labels = ['No Data'];
+            materialChart.data.datasets[0].data = [1];
+            materialChart.data.datasets[0].backgroundColor = ['#bdc3c7'];
+            materialChart.update();
+            document.getElementById('materialDrillTitle').innerHTML = drillLabel + ' <button class="btn-back" id="drillBackBtn" style="display:none;" onclick="resetMaterialDrill()">↩ Back</button>';
+            return;
+        }
+
+        // Aggregate: if drill is active, show packaging types within that material
+        const agg = {};
+        const labelKey = drillMaterial ? 'type' : 'material';
+        filteredEntries.forEach(e => {
+            const key = drillMaterial ? e.type : e.material;
+            agg[key] = (agg[key] || 0) + e.totalWeight;
+        });
+
+        const labels = Object.keys(agg);
+        const data = Object.values(agg);
+        const colorSet = ['#3498db','#e67e22','#2ecc71','#e74c3c','#9b59b6','#1abc9c','#f39c12','#34495e','#d35400','#27ae60','#8e44ad','#16a085'];
+        materialChart.data.labels = labels;
+        materialChart.data.datasets[0].data = data;
+        materialChart.data.datasets[0].backgroundColor = colorSet.slice(0, labels.length);
+        materialChart.update();
+
+        // Update title with drill info
+        let titleText = drillMaterial ? `📌 ${drillMaterial} (packaging types)` : `Materials (${labels.length})`;
+        document.getElementById('materialDrillTitle').innerHTML = titleText + 
+            (drillMaterial ? ` <button class="btn-back" onclick="resetMaterialDrill()">↩ Back</button>` : 
+            ` <button class="btn-back" id="drillBackBtn" style="display:none;" onclick="resetMaterialDrill()">↩ Back</button>`);
+        if (drillMaterial) {
+            document.getElementById('drillBackBtn').style.display = 'inline-block';
+        } else {
+            document.getElementById('drillBackBtn').style.display = 'none';
+        }
     }
 
     // ----- Export CSV -----
     window.exportCSV = function() {
-        if (entries.length === 0) { showToast('⚠️ No data to export'); return; }
+        if (entries.length === 0) { showToast('⚠️ No data'); return; }
         let csv = 'Reference,Department,Packaging Type,Material,Stream,Unit Weight(kg),Quantity,Total Weight(kg),Timestamp\n';
         entries.forEach(e => {
             csv += `${e.ref},${e.dept},${e.type},${e.material},${e.stream},${e.unitWeight},${e.qty},${e.totalWeight},${e.timestamp || ''}\n`;
@@ -634,7 +612,7 @@
         const uri = encodeURI('data:text/csv;charset=utf-8,' + csv);
         const link = document.createElement('a');
         link.setAttribute('href', uri);
-        link.setAttribute('download', `pEPR_Packaging_Data_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute('download', `pEPR_Data_${new Date().toISOString().slice(0,10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -646,7 +624,7 @@
     renderAdminLists();
     updateMaterials();
     updateDashboard();
-    showToast('💾 Data loaded from storage');
+    showToast('💾 Data loaded');
 </script>
 </body>
 </html>
