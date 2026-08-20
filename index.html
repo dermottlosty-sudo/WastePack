@@ -399,9 +399,8 @@
                     const label = materialChart.data.labels[index];
                     if (label && label !== 'No Data') {
                         drillMaterial = label;
-                        // Update the UI to show we're in drill mode
-                        document.getElementById('drillBackBtn').style.display = 'inline-block';
-                        document.getElementById('materialDrillTitle').innerHTML = `📌 ${label} <button class="btn-back" onclick="resetMaterialDrill()">↩ Back</button>`;
+                        // FIXED: Added id="drillBackBtn" to the dynamically generated button
+                        document.getElementById('materialDrillTitle').innerHTML = `📌 ${label} <button class="btn-back" id="drillBackBtn" onclick="resetMaterialDrill()">↩ Back</button>`;
                         updateCharts();
                         showToast(`🔍 Showing packaging types for: ${label}`);
                     }
@@ -571,7 +570,7 @@
         updateCharts();
     }
 
-    // ----- Chart update (FIXED: now properly handles drill-down) -----
+    // ----- Chart update (FIXED: now includes id="drillBackBtn" on both back buttons) -----
     function updateCharts() {
         // --- Department chart ---
         const deptTotals = {};
@@ -613,7 +612,7 @@
         }
         packTypeChart.update();
 
-        // --- Material Chart with drill (FIXED) ---
+        // --- Material Chart with drill (FIXED: both back buttons now have id="drillBackBtn") ---
         let filteredEntries = entries;
         if (drillMaterial) {
             filteredEntries = entries.filter(e => e.material === drillMaterial);
@@ -625,8 +624,9 @@
             materialChart.data.datasets[0].backgroundColor = ['#bdc3c7'];
             materialChart.update();
             const titleText = drillMaterial ? `📌 ${drillMaterial} (no data)` : 'Materials (no data)';
+            // FIXED: Added id="drillBackBtn" to both back buttons
             document.getElementById('materialDrillTitle').innerHTML = titleText + 
-                (drillMaterial ? ` <button class="btn-back" onclick="resetMaterialDrill()">↩ Back</button>` : 
+                (drillMaterial ? ` <button class="btn-back" id="drillBackBtn" onclick="resetMaterialDrill()">↩ Back</button>` : 
                 ` <button class="btn-back" id="drillBackBtn" style="display:none;" onclick="resetMaterialDrill()">↩ Back</button>`);
             return;
         }
@@ -648,8 +648,9 @@
 
         // Update title with drill info
         let titleText = drillMaterial ? `📌 ${drillMaterial} (packaging types)` : `Materials (${labels.length})`;
+        // FIXED: Added id="drillBackBtn" to both back buttons
         document.getElementById('materialDrillTitle').innerHTML = titleText + 
-            (drillMaterial ? ` <button class="btn-back" onclick="resetMaterialDrill()">↩ Back</button>` : 
+            (drillMaterial ? ` <button class="btn-back" id="drillBackBtn" onclick="resetMaterialDrill()">↩ Back</button>` : 
             ` <button class="btn-back" id="drillBackBtn" style="display:none;" onclick="resetMaterialDrill()">↩ Back</button>`);
         
         // Show/hide back button
