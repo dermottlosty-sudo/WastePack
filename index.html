@@ -336,7 +336,6 @@
             const savedEntries = localStorage.getItem(STORAGE_KEYS.ENTRIES);
             if (savedEntries) {
                 entries = JSON.parse(savedEntries);
-                // Recalculate totals after load
                 recalcTotals();
             }
         } catch (e) { console.warn('Load error:', e); }
@@ -400,9 +399,10 @@
                     const label = materialChart.data.labels[index];
                     if (label && label !== 'No Data') {
                         drillMaterial = label;
-                        updateCharts();
+                        // Update the UI to show we're in drill mode
                         document.getElementById('drillBackBtn').style.display = 'inline-block';
                         document.getElementById('materialDrillTitle').innerHTML = `📌 ${label} <button class="btn-back" onclick="resetMaterialDrill()">↩ Back</button>`;
+                        updateCharts();
                         showToast(`🔍 Showing packaging types for: ${label}`);
                     }
                 }
@@ -410,13 +410,14 @@
         }
     });
 
-    function resetMaterialDrill() {
+    // ----- FIXED: Reset drill function -----
+    window.resetMaterialDrill = function() {
         drillMaterial = null;
         document.getElementById('drillBackBtn').style.display = 'none';
         document.getElementById('materialDrillTitle').innerHTML = 'Materials <button class="btn-back" id="drillBackBtn" style="display:none;" onclick="resetMaterialDrill()">↩ Back</button>';
         updateCharts();
         showToast('📊 Showing all materials');
-    }
+    };
 
     // ----- Toast -----
     let toastTimeout;
@@ -570,7 +571,7 @@
         updateCharts();
     }
 
-    // ----- Chart update (FIXED: now properly aggregates all entries) -----
+    // ----- Chart update (FIXED: now properly handles drill-down) -----
     function updateCharts() {
         // --- Department chart ---
         const deptTotals = {};
@@ -612,7 +613,7 @@
         }
         packTypeChart.update();
 
-        // --- Material Chart with drill ---
+        // --- Material Chart with drill (FIXED) ---
         let filteredEntries = entries;
         if (drillMaterial) {
             filteredEntries = entries.filter(e => e.material === drillMaterial);
@@ -650,36 +651,12 @@
         document.getElementById('materialDrillTitle').innerHTML = titleText + 
             (drillMaterial ? ` <button class="btn-back" onclick="resetMaterialDrill()">↩ Back</button>` : 
             ` <button class="btn-back" id="drillBackBtn" style="display:none;" onclick="resetMaterialDrill()">↩ Back</button>`);
+        
+        // Show/hide back button
+        const backBtn = document.getElementById('drillBackBtn');
         if (drillMaterial) {
-            document.getElementById('drillBackBtn').style.display = 'inline-block';
+            backBtn.style.display = 'inline-block';
         } else {
-            document.getElementById('drillBackBtn').style.display = 'none';
+            backBtn.style.display = 'none';
         }
     }
-
-    // ----- Export CSV -----
-    window.exportCSV = function() {
-        if (entries.length === 0) { showToast('⚠️ No data'); return; }
-        let csv = 'Reference,Department,Packaging Type,Material,Stream,Unit Weight(kg),Quantity,Total Weight(kg),Timestamp\n';
-        entries.forEach(e => {
-            csv += `${e.ref},${e.dept},${e.type},${e.material},${e.stream},${e.unitWeight},${e.qty},${e.totalWeight},${e.timestamp || ''}\n`;
-        });
-        const uri = encodeURI('data:text/csv;charset=utf-8,' + csv);
-        const link = document.createElement('a');
-        link.setAttribute('href', uri);
-        link.setAttribute('download', `pEPR_Data_${new Date().toISOString().slice(0,10)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showToast('✅ CSV exported');
-    };
-
-    // ----- Init -----
-    renderDepts();
-    renderAdminLists();
-    updateMaterials();
-    updateDashboard();
-    showToast('💾 Data loaded');
-</script>
-</body>
-</html>
