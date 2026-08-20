@@ -334,9 +334,23 @@
             const savedMaterials = localStorage.getItem(STORAGE_KEYS.MATERIALS);
             if (savedMaterials) materials = JSON.parse(savedMaterials);
             const savedEntries = localStorage.getItem(STORAGE_KEYS.ENTRIES);
-            if (savedEntries) entries = JSON.parse(savedEntries);
+            if (savedEntries) {
+                entries = JSON.parse(savedEntries);
+                // Recalculate totals after load
+                recalcTotals();
+            }
         } catch (e) { console.warn('Load error:', e); }
     }
+    
+    function recalcTotals() {
+        b2bTotal = 0;
+        householdTotal = 0;
+        entries.forEach(e => {
+            if (e.stream === 'Non-Household') b2bTotal += e.totalWeight;
+            else householdTotal += e.totalWeight;
+        });
+    }
+    
     function saveData() {
         try {
             localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(entries));
@@ -489,6 +503,7 @@
     window.deleteEntry = function(id) {
         if (confirm('Delete this entry?')) {
             entries = entries.filter(e => e.id !== id);
+            recalcTotals();
             saveData();
             updateDashboard();
             showToast('🗑 Entry deleted');
@@ -516,6 +531,7 @@
             timestamp: new Date().toISOString()
         };
         entries.push(entry);
+        recalcTotals();
         saveData();
         updateDashboard();
         this.reset();
@@ -525,12 +541,7 @@
 
     // ----- Update Dashboard -----
     function updateDashboard() {
-        // Recalc totals
-        b2bTotal = 0; householdTotal = 0;
-        entries.forEach(e => {
-            if (e.stream === 'Non-Household') b2bTotal += e.totalWeight;
-            else householdTotal += e.totalWeight;
-        });
+        // Update summary boxes
         document.getElementById('total-weight').innerText = (b2bTotal + householdTotal).toFixed(2) + ' kg';
         document.getElementById('b2b-weight').innerText = b2bTotal.toFixed(2) + ' kg';
         document.getElementById('household-weight').innerText = householdTotal.toFixed(2) + ' kg';
@@ -538,51 +549,73 @@
 
         // Ledger with delete button
         ledgerBody.innerHTML = '';
-        entries.slice().reverse().forEach(e => {
-            const streamLabel = e.stream === 'Non-Household' ? '🏢 B2B' : '🏠 HH';
-            ledgerBody.innerHTML += `<tr>
-                <td><strong>${e.ref}</strong></td>
-                <td>${e.dept}</td>
-                <td>${e.type}</td>
-                <td>${e.material}</td>
-                <td><span class="ledger-stream">${streamLabel}</span></td>
-                <td>${e.totalWeight.toFixed(1)}</td>
-                <td><button class="btn-delete" onclick="deleteEntry('${e.id}')">✕</button></td>
-            </tr>`;
-        });
+        if (entries.length === 0) {
+            ledgerBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#6a7f8d; padding:20px;">No entries yet. Add your first packaging record above.</td></tr>`;
+        } else {
+            entries.slice().reverse().forEach(e => {
+                const streamLabel = e.stream === 'Non-Household' ? '🏢 B2B' : '🏠 HH';
+                ledgerBody.innerHTML += `<tr>
+                    <td><strong>${e.ref}</strong></td>
+                    <td>${e.dept}</td>
+                    <td>${e.type}</td>
+                    <td>${e.material}</td>
+                    <td><span class="ledger-stream">${streamLabel}</span></td>
+                    <td>${e.totalWeight.toFixed(1)}</td>
+                    <td><button class="btn-delete" onclick="deleteEntry('${e.id}')">✕</button></td>
+                </tr>`;
+            });
+        }
 
+        // Always update charts after any change
         updateCharts();
     }
 
-    // ----- Chart update -----
+    // ----- Chart update (FIXED: now properly aggregates all entries) -----
     function updateCharts() {
-        // Department chart
+        // --- Department chart ---
         const deptTotals = {};
-        entries.forEach(e => { deptTotals[e.dept] = (deptTotals[e.dept] || 0) + e.totalWeight; });
+        entries.forEach(e => {
+            deptTotals[e.dept] = (deptTotals[e.dept] || 0) + e.totalWeight;
+        });
         const deptLabels = Object.keys(deptTotals);
         const deptData = Object.values(deptTotals);
-        deptChart.data.labels = deptLabels.length ? deptLabels : ['No Data'];
-        deptChart.data.datasets[0].data = deptLabels.length ? deptData : [1];
-        deptChart.data.datasets[0].backgroundColor = deptLabels.length ? chartColors.slice(0, deptLabels.length) : ['#bdc3c7'];
+        
+        if (deptLabels.length === 0) {
+            deptChart.data.labels = ['No Data'];
+            deptChart.data.datasets[0].data = [1];
+            deptChart.data.datasets[0].backgroundColor = ['#bdc3c7'];
+        } else {
+            deptChart.data.labels = deptLabels;
+            deptChart.data.datasets[0].data = deptData;
+            deptChart.data.datasets[0].backgroundColor = chartColors.slice(0, deptLabels.length);
+        }
         deptChart.update();
 
-        // Packaging Type Chart
+        // --- Packaging Type Chart ---
         const typeTotals = {};
-        entries.forEach(e => { typeTotals[e.type] = (typeTotals[e.type] || 0) + e.totalWeight; });
+        entries.forEach(e => {
+            typeTotals[e.type] = (typeTotals[e.type] || 0) + e.totalWeight;
+        });
         const typeLabels = Object.keys(typeTotals);
         const typeData = Object.values(typeTotals);
-        packTypeChart.data.labels = typeLabels.length ? typeLabels : ['No Data'];
-        packTypeChart.data.datasets[0].data = typeLabels.length ? typeData : [1];
-        packTypeChart.data.datasets[0].backgroundColor = typeLabels.length ? chartColors.slice(0, typeLabels.length) : ['#bdc3c7'];
+        
+        if (typeLabels.length === 0) {
+            packTypeChart.data.labels = ['No Data'];
+            packTypeChart.data.datasets[0].data = [1];
+            packTypeChart.data.datasets[0].backgroundColor = ['#bdc3c7'];
+            document.getElementById('packTypeTitle').textContent = 'No packaging data';
+        } else {
+            packTypeChart.data.labels = typeLabels;
+            packTypeChart.data.datasets[0].data = typeData;
+            packTypeChart.data.datasets[0].backgroundColor = chartColors.slice(0, typeLabels.length);
+            document.getElementById('packTypeTitle').textContent = `Packaging Types (${typeLabels.length})`;
+        }
         packTypeChart.update();
-        document.getElementById('packTypeTitle').textContent = typeLabels.length ? `Packaging Types (${typeLabels.length})` : 'No packaging data';
 
-        // Material Chart with drill
+        // --- Material Chart with drill ---
         let filteredEntries = entries;
-        let drillLabel = 'Materials';
         if (drillMaterial) {
             filteredEntries = entries.filter(e => e.material === drillMaterial);
-            drillLabel = `📌 ${drillMaterial}`;
         }
 
         if (filteredEntries.length === 0) {
@@ -590,12 +623,15 @@
             materialChart.data.datasets[0].data = [1];
             materialChart.data.datasets[0].backgroundColor = ['#bdc3c7'];
             materialChart.update();
-            document.getElementById('materialDrillTitle').innerHTML = drillLabel + ' <button class="btn-back" id="drillBackBtn" style="display:none;" onclick="resetMaterialDrill()">↩ Back</button>';
+            const titleText = drillMaterial ? `📌 ${drillMaterial} (no data)` : 'Materials (no data)';
+            document.getElementById('materialDrillTitle').innerHTML = titleText + 
+                (drillMaterial ? ` <button class="btn-back" onclick="resetMaterialDrill()">↩ Back</button>` : 
+                ` <button class="btn-back" id="drillBackBtn" style="display:none;" onclick="resetMaterialDrill()">↩ Back</button>`);
             return;
         }
 
+        // Aggregate: if drill is active, show packaging types within that material
         const agg = {};
-        const labelKey = drillMaterial ? 'type' : 'material';
         filteredEntries.forEach(e => {
             const key = drillMaterial ? e.type : e.material;
             agg[key] = (agg[key] || 0) + e.totalWeight;
@@ -603,11 +639,13 @@
 
         const labels = Object.keys(agg);
         const data = Object.values(agg);
+        
         materialChart.data.labels = labels;
         materialChart.data.datasets[0].data = data;
         materialChart.data.datasets[0].backgroundColor = chartColors.slice(0, labels.length);
         materialChart.update();
 
+        // Update title with drill info
         let titleText = drillMaterial ? `📌 ${drillMaterial} (packaging types)` : `Materials (${labels.length})`;
         document.getElementById('materialDrillTitle').innerHTML = titleText + 
             (drillMaterial ? ` <button class="btn-back" onclick="resetMaterialDrill()">↩ Back</button>` : 
