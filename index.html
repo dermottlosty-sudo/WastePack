@@ -130,6 +130,10 @@
             letter-spacing: 0.3px;
         }
         .btn:active { background: #13516b; transform: scale(0.97); }
+        .btn-danger {
+            background: #c0392b;
+        }
+        .btn-danger:active { background: #922b21; }
         .btn-export {
             background: #6d3b8a;
             width: auto;
@@ -140,6 +144,16 @@
             border-radius: 30px;
         }
         .btn-export:active { background: #532b6b; }
+        .btn-clear {
+            background: #7f8c8d;
+            width: auto;
+            padding: 10px 18px;
+            font-size: 0.85rem;
+            float: left;
+            margin-top: 0;
+            border-radius: 30px;
+        }
+        .btn-clear:active { background: #5d6d7e; }
         .table-wrap {
             overflow-x: auto;
             margin-top: 8px;
@@ -256,20 +270,44 @@
             max-width: 100%;
         }
         .clearfix::after { content: ""; display: table; clear: both; }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f3a4b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
         @media (max-width: 420px) {
             .box p { font-size: 1.0rem; }
             .box h3 { font-size: 0.6rem; }
             .box { padding: 10px 4px; min-width: 80px; }
-            .btn-export { font-size: 0.75rem; padding: 8px 14px; }
+            .btn-export, .btn-clear { font-size: 0.75rem; padding: 8px 14px; }
         }
-        /* small tap friendly */
         button, select, input { touch-action: manipulation; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>♻️ pEPR Compliance</h1>
-    <div class="subhead">Packaging import ledger · mobile ready</div>
+    <div class="subhead">Packaging import ledger · data saved locally</div>
 
     <div class="summary-boxes">
         <div class="box total"><h3>Total</h3><p id="total-weight">0.00 kg</p></div>
@@ -313,7 +351,10 @@
     <div class="card">
         <div class="clearfix">
             <h2 style="display:inline-block;">📊 Stream split</h2>
-            <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
+            <div style="float: right; display: flex; gap: 6px;">
+                <button class="btn-clear" onclick="clearAllData()">🗑 Clear</button>
+                <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
+            </div>
         </div>
         <div class="chart-container">
             <canvas id="wasteChart"></canvas>
@@ -321,14 +362,14 @@
     </div>
 
     <div class="card">
-        <h2>📋 Compliance ledger</h2>
+        <h2>📋 Compliance ledger <span style="font-size:0.7rem; font-weight:normal; color:#6a7f8d;" id="entry-count">(0 entries)</span></h2>
         <div class="table-wrap">
             <table>
                 <thead><tr><th>Ref</th><th>Dept</th><th>Type</th><th>Mat</th><th>Stream</th><th>kg</th></tr></thead>
                 <tbody id="ledger-body"></tbody>
             </table>
         </div>
-        <div style="font-size:0.7rem; color:#6a7f8d; margin-top:6px;">tap row for details (simplified view)</div>
+        <div style="font-size:0.7rem; color:#6a7f8d; margin-top:6px;">Data saved automatically to your browser</div>
     </div>
 
     <!-- ADMIN -->
@@ -348,12 +389,54 @@
                 <ul id="material-list"></ul>
             </div>
         </div>
-        <p style="font-size:0.7rem; color:#6f889b; margin:10px 0 0;">changes in memory · refresh resets to defaults</p>
+        <p style="font-size:0.7rem; color:#6f889b; margin:10px 0 0;">Changes saved to browser storage</p>
     </div>
 </div>
 
+<!-- Toast notification -->
+<div id="toast" class="toast"></div>
+
 <script>
-    // ----- DATA (from spreadsheet) -----
+    // ----- STORAGE KEYS -----
+    const STORAGE_KEYS = {
+        ENTRIES: 'pepr_entries',
+        DEPTS: 'pepr_depts',
+        PACK_TYPES: 'pepr_packTypes',
+        MATERIALS: 'pepr_materials'
+    };
+
+    // ----- DATA (with persistence) -----
+    function loadData() {
+        try {
+            const savedDepts = localStorage.getItem(STORAGE_KEYS.DEPTS);
+            if (savedDepts) depts = JSON.parse(savedDepts);
+            
+            const savedPackTypes = localStorage.getItem(STORAGE_KEYS.PACK_TYPES);
+            if (savedPackTypes) packTypes = JSON.parse(savedPackTypes);
+            
+            const savedMaterials = localStorage.getItem(STORAGE_KEYS.MATERIALS);
+            if (savedMaterials) materials = JSON.parse(savedMaterials);
+            
+            const savedEntries = localStorage.getItem(STORAGE_KEYS.ENTRIES);
+            if (savedEntries) entries = JSON.parse(savedEntries);
+        } catch (e) {
+            console.warn('Error loading data from storage:', e);
+        }
+    }
+
+    function saveData() {
+        try {
+            localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(entries));
+            localStorage.setItem(STORAGE_KEYS.DEPTS, JSON.stringify(depts));
+            localStorage.setItem(STORAGE_KEYS.PACK_TYPES, JSON.stringify(packTypes));
+            localStorage.setItem(STORAGE_KEYS.MATERIALS, JSON.stringify(materials));
+        } catch (e) {
+            console.warn('Error saving data:', e);
+            showToast('⚠️ Storage full or unavailable');
+        }
+    }
+
+    // Default data (only used if nothing in storage)
     let depts = ['Track', 'Fencing', 'Gates', 'Telegraph Poles'];
     let packTypes = {
         'Track': ['Metal Banding', 'Wooden Bearers', 'Lathes', 'Label', 'Staple', 'Metal Tag'],
@@ -362,12 +445,18 @@
         'Telegraph Poles': ['Labels', 'Steel butt tag', 'Ring Shank Nail', 'Staples', 'Plastic Strapping', 'Metal Strapping', 'Cloth Strapping']
     };
     let materials = ['Wood', 'Metal', 'Plastic', 'Textile', 'Paper/Cardboard', 'Paper / Plastic', 'Untreated', 'Treated'];
+    let entries = [];
+    let b2bTotal = 0, householdTotal = 0;
+
+    // Load data from storage
+    loadData();
 
     // ----- DOM refs -----
     const deptSelect = document.getElementById('department');
     const packSelect = document.getElementById('pack-type');
     const materialSelect = document.getElementById('material');
     const ledgerBody = document.getElementById('ledger-body');
+    const entryCount = document.getElementById('entry-count');
 
     // ----- Chart -----
     const ctx = document.getElementById('wasteChart').getContext('2d');
@@ -377,9 +466,16 @@
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
     });
 
-    // ----- State -----
-    let entries = [];
-    let b2bTotal = 0, householdTotal = 0;
+    // ----- Toast -----
+    let toastTimeout;
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => toast.classList.remove('show'), 2500);
+    }
 
     // ----- Render dropdowns -----
     function renderDepts() {
@@ -418,40 +514,53 @@
         materials.forEach(m => { const li = document.createElement('li'); li.innerHTML = `<span>${m}</span> <button onclick="removeMaterial('${m}')">✕</button>`; matList.appendChild(li); });
     }
 
-    // ----- Admin actions (global) -----
+    // ----- Admin actions (with save) -----
     window.addDept = function() {
         const input = document.getElementById('new-dept');
         const val = input.value.trim();
-        if (val && !depts.includes(val)) { depts.push(val); packTypes[val] = []; renderDepts(); renderAdminLists(); }
+        if (val && !depts.includes(val)) { depts.push(val); packTypes[val] = []; renderDepts(); renderAdminLists(); saveData(); showToast('✅ Department added'); }
         input.value = '';
     };
     window.removeDept = function(name) {
         depts = depts.filter(d => d !== name);
         delete packTypes[name];
-        renderDepts(); renderAdminLists();
+        renderDepts(); renderAdminLists(); saveData(); showToast('🗑 Department removed');
     };
     window.addPackType = function() {
         const input = document.getElementById('new-pack');
         const val = input.value.trim();
         if (val) {
             Object.keys(packTypes).forEach(d => { if (!packTypes[d].includes(val)) packTypes[d].push(val); });
-            updatePackTypes(); renderAdminLists();
+            updatePackTypes(); renderAdminLists(); saveData(); showToast('✅ Packaging type added');
         }
         input.value = '';
     };
     window.removePackType = function(name) {
         Object.keys(packTypes).forEach(d => { packTypes[d] = packTypes[d].filter(p => p !== name); });
-        updatePackTypes(); renderAdminLists();
+        updatePackTypes(); renderAdminLists(); saveData(); showToast('🗑 Packaging type removed');
     };
     window.addMaterial = function() {
         const input = document.getElementById('new-material');
         const val = input.value.trim();
-        if (val && !materials.includes(val)) { materials.push(val); updateMaterials(); renderAdminLists(); }
+        if (val && !materials.includes(val)) { materials.push(val); updateMaterials(); renderAdminLists(); saveData(); showToast('✅ Material added'); }
         input.value = '';
     };
     window.removeMaterial = function(name) {
         materials = materials.filter(m => m !== name);
-        updateMaterials(); renderAdminLists();
+        updateMaterials(); renderAdminLists(); saveData(); showToast('🗑 Material removed');
+    };
+
+    // ----- Clear all data -----
+    window.clearAllData = function() {
+        if (entries.length === 0) { showToast('⚠️ No data to clear'); return; }
+        if (confirm('Delete ALL entries? This cannot be undone.')) {
+            entries = [];
+            b2bTotal = 0;
+            householdTotal = 0;
+            saveData();
+            updateDashboard();
+            showToast('🗑 All entries cleared');
+        }
     };
 
     // ----- Add entry -----
@@ -459,10 +568,11 @@
         e.preventDefault();
         const weight = parseFloat(document.getElementById('unit-weight').value);
         const qty = parseInt(document.getElementById('qty').value);
-        if (isNaN(weight) || isNaN(qty) || weight <= 0 || qty <= 0) { alert('Please enter valid weight and quantity.'); return; }
+        if (isNaN(weight) || isNaN(qty) || weight <= 0 || qty <= 0) { showToast('⚠️ Please enter valid weight and quantity'); return; }
         const total = weight * qty;
         const stream = document.getElementById('stream').value;
         const entry = {
+            id: Date.now() + '_' + Math.random().toString(36).substr(2, 5),
             ref: document.getElementById('ref').value || 'N/A',
             dept: document.getElementById('department').value,
             type: document.getElementById('pack-type').value,
@@ -470,22 +580,35 @@
             stream: stream,
             unitWeight: weight,
             qty: qty,
-            totalWeight: total
+            totalWeight: total,
+            timestamp: new Date().toISOString()
         };
         entries.push(entry);
         if (stream === 'Non-Household') b2bTotal += total;
         else householdTotal += total;
+        saveData();
         updateDashboard();
         this.reset();
-        renderDepts(); // restore depts after reset
+        renderDepts();
+        showToast('✅ Entry added');
     });
 
     function updateDashboard() {
+        // Recalculate totals
+        b2bTotal = 0;
+        householdTotal = 0;
+        entries.forEach(e => {
+            if (e.stream === 'Non-Household') b2bTotal += e.totalWeight;
+            else householdTotal += e.totalWeight;
+        });
+
         document.getElementById('total-weight').innerText = (b2bTotal + householdTotal).toFixed(2) + ' kg';
         document.getElementById('b2b-weight').innerText = b2bTotal.toFixed(2) + ' kg';
         document.getElementById('household-weight').innerText = householdTotal.toFixed(2) + ' kg';
         chart.data.datasets[0].data = [b2bTotal, householdTotal];
         chart.update();
+
+        entryCount.textContent = `(${entries.length} entries)`;
 
         ledgerBody.innerHTML = '';
         entries.slice().reverse().forEach(e => {
@@ -503,26 +626,27 @@
 
     // ----- Export CSV -----
     window.exportCSV = function() {
-        if (entries.length === 0) return alert('No data to export.');
-        let csv = 'Reference,Department,Packaging Type,Material,Stream,Unit Weight(kg),Quantity,Total Weight(kg)\n';
+        if (entries.length === 0) { showToast('⚠️ No data to export'); return; }
+        let csv = 'Reference,Department,Packaging Type,Material,Stream,Unit Weight(kg),Quantity,Total Weight(kg),Timestamp\n';
         entries.forEach(e => {
-            csv += `${e.ref},${e.dept},${e.type},${e.material},${e.stream},${e.unitWeight},${e.qty},${e.totalWeight}\n`;
+            csv += `${e.ref},${e.dept},${e.type},${e.material},${e.stream},${e.unitWeight},${e.qty},${e.totalWeight},${e.timestamp || ''}\n`;
         });
         const uri = encodeURI('data:text/csv;charset=utf-8,' + csv);
         const link = document.createElement('a');
         link.setAttribute('href', uri);
-        link.setAttribute('download', 'pEPR_Packaging_Data.csv');
+        link.setAttribute('download', `pEPR_Packaging_Data_${new Date().toISOString().slice(0,10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        showToast('✅ CSV exported');
     };
 
     // ----- Init -----
     renderDepts();
     renderAdminLists();
     updateMaterials();
-    // optional sample entry to show UI
-    // (none, keep empty)
+    updateDashboard();
+    showToast('💾 Data loaded from storage');
 </script>
 </body>
 </html>
