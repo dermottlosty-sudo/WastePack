@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>pEPR Compliance · Mobile</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+            background: #f2f5f7;
+            padding: 12px 10px 30px;
+            color: #1e2b37;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0b2a3b;
+            margin: 0 0 6px 0;
+            letter-spacing: -0.3px;
+        }
+        .subhead {
+            font-size: 0.85rem;
+            color: #4a5b68;
+            margin-bottom: 14px;
+        }
+        .summary-boxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .box {
+            flex: 1 1 calc(33.33% - 6px);
+            min-width: 100px;
+            padding: 12px 6px;
+            border-radius: 14px;
+            text-align: center;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.06);
+        }
+        .box.total { background: #1f3a4b; }
+        .box.non-household { background: #1f8b4c; }
+        .box.household { background: #b03a2e; }
+        .box h3 {
+            font-size: 0.7rem;
+            font-weight: 500;
+            opacity: 0.85;
+            margin: 0 0 2px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .box p {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.3;
+        }
+        .card {
+            background: white;
+            padding: 16px 14px;
+            border-radius: 18px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+            margin-bottom: 16px;
+            transition: 0.15s;
+        }
+        .card h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #0b2a3b;
+            margin: 0 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #1f3a4b;
+            margin-top: 14px;
+            margin-bottom: 2px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px 12px;
+            font-size: 1rem;
+            border: 1px solid #d8e0e6;
+            border-radius: 12px;
+            background: #fafcfd;
+            transition: 0.15s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        input:focus, select:focus {
+            border-color: #1f6f8f;
+            background: white;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(31, 111, 143, 0.15);
+        }
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a5b68' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 36px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 30px;
+            background: #1f6f8f;
+            color: white;
+            margin-top: 18px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+        .btn:active { background: #13516b; transform: scale(0.97); }
+        .btn-export {
+            background: #6d3b8a;
+            width: auto;
+            padding: 10px 18px;
+            font-size: 0.85rem;
+            float: right;
+            margin-top: 0;
+            border-radius: 30px;
+        }
+        .btn-export:active { background: #532b6b; }
+        .table-wrap {
+            overflow-x: auto;
+            margin-top: 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            min-width: 400px;
+        }
+        th {
+            background: #e9eef2;
+            color: #1f3a4b;
+            font-weight: 600;
+            padding: 10px 6px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        td {
+            padding: 10px 6px;
+            border-bottom: 1px solid #eef3f6;
+            vertical-align: middle;
+        }
+        .ledger-stream {
+            font-weight: 600;
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 30px;
+            background: #ecf0f3;
+            white-space: nowrap;
+        }
+        .admin-section {
+            margin-top: 24px;
+            border-top: 2px dashed #d0d9e0;
+            padding-top: 18px;
+        }
+        .admin-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 10px;
+        }
+        .admin-card {
+            background: #f6f9fb;
+            padding: 14px 12px;
+            border-radius: 16px;
+        }
+        .admin-card h4 {
+            font-size: 0.9rem;
+            margin: 0 0 8px 0;
+            color: #1f3a4b;
+        }
+        .flex-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .flex-row input {
+            flex: 1;
+            padding: 10px 12px;
+            font-size: 0.9rem;
+            border-radius: 30px;
+            background: white;
+        }
+        .flex-row button {
+            background: #1f3a4b;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            width: 44px;
+            height: 44px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            flex-shrink: 0;
+            transition: 0.15s;
+        }
+        .flex-row button:active { background: #0b2a3b; transform: scale(0.94); }
+        .admin-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 12px 0 0;
+            max-height: 130px;
+            overflow-y: auto;
+        }
+        .admin-card li {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #e2e9ef;
+            font-size: 0.85rem;
+            align-items: center;
+        }
+        .admin-card li button {
+            background: #c0392b;
+            border: none;
+            color: white;
+            border-radius: 30px;
+            padding: 2px 12px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .admin-card li button:active { background: #922b21; }
+        .chart-container {
+            height: 180px;
+            max-height: 180px;
+            position: relative;
+            margin: 0 auto;
+        }
+        canvas {
+            max-height: 180px;
+            max-width: 100%;
+        }
+        .clearfix::after { content: ""; display: table; clear: both; }
+        @media (max-width: 420px) {
+            .box p { font-size: 1.0rem; }
+            .box h3 { font-size: 0.6rem; }
+            .box { padding: 10px 4px; min-width: 80px; }
+            .btn-export { font-size: 0.75rem; padding: 8px 14px; }
+        }
+        /* small tap friendly */
+        button, select, input { touch-action: manipulation; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>♻️ pEPR Compliance</h1>
+    <div class="subhead">Packaging import ledger · mobile ready</div>
+
+    <div class="summary-boxes">
+        <div class="box total"><h3>Total</h3><p id="total-weight">0.00 kg</p></div>
+        <div class="box non-household"><h3>B2B (exempt)</h3><p id="b2b-weight">0.00 kg</p></div>
+        <div class="box household"><h3>Household</h3><p id="household-weight">0.00 kg</p></div>
+    </div>
+
+    <!-- Entry form -->
+    <div class="card">
+        <h2>📦 Log packaging</h2>
+        <form id="packaging-form">
+            <label>Import ref / Order</label>
+            <input type="text" id="ref" placeholder="e.g. INV-4231" required>
+
+            <label>Department</label>
+            <select id="department"></select>
+
+            <label>Packaging Type</label>
+            <select id="pack-type" required></select>
+
+            <label>Material</label>
+            <select id="material"></select>
+
+            <label>Waste stream</label>
+            <select id="stream">
+                <option value="Non-Household">Non-Household (B2B · exempt)</option>
+                <option value="Household">Household (fee applicable)</option>
+            </select>
+
+            <label>Unit weight (kg)</label>
+            <input type="number" id="unit-weight" step="0.01" placeholder="0.00" required>
+
+            <label>Quantity</label>
+            <input type="number" id="qty" placeholder="1" required>
+
+            <button type="submit" class="btn">➕ Add to ledger</button>
+        </form>
+    </div>
+
+    <!-- Chart + ledger -->
+    <div class="card">
+        <div class="clearfix">
+            <h2 style="display:inline-block;">📊 Stream split</h2>
+            <button class="btn-export" onclick="exportCSV()">⬇ CSV</button>
+        </div>
+        <div class="chart-container">
+            <canvas id="wasteChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📋 Compliance ledger</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Ref</th><th>Dept</th><th>Type</th><th>Mat</th><th>Stream</th><th>kg</th></tr></thead>
+                <tbody id="ledger-body"></tbody>
+            </table>
+        </div>
+        <div style="font-size:0.7rem; color:#6a7f8d; margin-top:6px;">tap row for details (simplified view)</div>
+    </div>
+
+    <!-- ADMIN -->
+    <div class="admin-section">
+        <h2 style="font-size:1.1rem;">⚙️ Admin</h2>
+        <div class="admin-grid">
+            <div class="admin-card"><h4>Departments</h4>
+                <div class="flex-row"><input type="text" id="new-dept" placeholder="New dept"><button onclick="addDept()">+</button></div>
+                <ul id="dept-list"></ul>
+            </div>
+            <div class="admin-card"><h4>Packaging types</h4>
+                <div class="flex-row"><input type="text" id="new-pack" placeholder="New type"><button onclick="addPackType()">+</button></div>
+                <ul id="pack-list"></ul>
+            </div>
+            <div class="admin-card"><h4>Materials</h4>
+                <div class="flex-row"><input type="text" id="new-material" placeholder="New material"><button onclick="addMaterial()">+</button></div>
+                <ul id="material-list"></ul>
+            </div>
+        </div>
+        <p style="font-size:0.7rem; color:#6f889b; margin:10px 0 0;">changes in memory · refresh resets to defaults</p>
+    </div>
+</div>
+
+<script>
+    // ----- DATA (from spreadsheet) -----
+    let depts = ['Track', 'Fencing', 'Gates', 'Telegraph Poles'];
+    let packTypes = {
+        'Track': ['Metal Banding', 'Wooden Bearers', 'Lathes', 'Label', 'Staple', 'Metal Tag'],
+        'Fencing': ['Metal Banding', 'Plastic Banding', 'Cloth Banding', 'Wooden Bearers (Untreated)', 'Wooden Bearers (Treated)', 'Nails', 'Staples', 'Labels', 'Untreated Lathes', 'Treated Lathes', 'Wooden Stillage Supports (Frames)'],
+        'Gates': ['Wooden Packers', 'Plastic Banding', 'Wooden Bearers', 'Label', 'Nails'],
+        'Telegraph Poles': ['Labels', 'Steel butt tag', 'Ring Shank Nail', 'Staples', 'Plastic Strapping', 'Metal Strapping', 'Cloth Strapping']
+    };
+    let materials = ['Wood', 'Metal', 'Plastic', 'Textile', 'Paper/Cardboard', 'Paper / Plastic', 'Untreated', 'Treated'];
+
+    // ----- DOM refs -----
+    const deptSelect = document.getElementById('department');
+    const packSelect = document.getElementById('pack-type');
+    const materialSelect = document.getElementById('material');
+    const ledgerBody = document.getElementById('ledger-body');
+
+    // ----- Chart -----
+    const ctx = document.getElementById('wasteChart').getContext('2d');
+    let chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: ['Non-Household (exempt)', 'Household (fee)'], datasets: [{ data: [0, 0], backgroundColor: ['#1f8b4c', '#b03a2e'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
+    });
+
+    // ----- State -----
+    let entries = [];
+    let b2bTotal = 0, householdTotal = 0;
+
+    // ----- Render dropdowns -----
+    function renderDepts() {
+        deptSelect.innerHTML = '';
+        depts.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.textContent = d; deptSelect.appendChild(opt); });
+        updatePackTypes();
+    }
+
+    function updatePackTypes() {
+        const dept = deptSelect.value;
+        const types = packTypes[dept] || [];
+        packSelect.innerHTML = '';
+        if (types.length === 0) { const opt = document.createElement('option'); opt.value = ''; opt.textContent = '— no types —'; packSelect.appendChild(opt); }
+        else { types.forEach(t => { const opt = document.createElement('option'); opt.value = t; opt.textContent = t; packSelect.appendChild(opt); }); }
+        updateMaterials();
+    }
+
+    function updateMaterials() {
+        materialSelect.innerHTML = '';
+        materials.forEach(m => { const opt = document.createElement('option'); opt.value = m; opt.textContent = m; materialSelect.appendChild(opt); });
+    }
+    deptSelect.addEventListener('change', updatePackTypes);
+
+    // ----- Admin UI lists -----
+    function renderAdminLists() {
+        const deptList = document.getElementById('dept-list');
+        deptList.innerHTML = '';
+        depts.forEach(d => { const li = document.createElement('li'); li.innerHTML = `<span>${d}</span> <button onclick="removeDept('${d}')">✕</button>`; deptList.appendChild(li); });
+        const packList = document.getElementById('pack-list');
+        packList.innerHTML = '';
+        const allPacks = new Set();
+        Object.values(packTypes).forEach(arr => arr.forEach(p => allPacks.add(p)));
+        allPacks.forEach(p => { const li = document.createElement('li'); li.innerHTML = `<span>${p}</span> <button onclick="removePackType('${p}')">✕</button>`; packList.appendChild(li); });
+        const matList = document.getElementById('material-list');
+        matList.innerHTML = '';
+        materials.forEach(m => { const li = document.createElement('li'); li.innerHTML = `<span>${m}</span> <button onclick="removeMaterial('${m}')">✕</button>`; matList.appendChild(li); });
+    }
+
+    // ----- Admin actions (global) -----
+    window.addDept = function() {
+        const input = document.getElementById('new-dept');
+        const val = input.value.trim();
+        if (val && !depts.includes(val)) { depts.push(val); packTypes[val] = []; renderDepts(); renderAdminLists(); }
+        input.value = '';
+    };
+    window.removeDept = function(name) {
+        depts = depts.filter(d => d !== name);
+        delete packTypes[name];
+        renderDepts(); renderAdminLists();
+    };
+    window.addPackType = function() {
+        const input = document.getElementById('new-pack');
+        const val = input.value.trim();
+        if (val) {
+            Object.keys(packTypes).forEach(d => { if (!packTypes[d].includes(val)) packTypes[d].push(val); });
+            updatePackTypes(); renderAdminLists();
+        }
+        input.value = '';
+    };
+    window.removePackType = function(name) {
+        Object.keys(packTypes).forEach(d => { packTypes[d] = packTypes[d].filter(p => p !== name); });
+        updatePackTypes(); renderAdminLists();
+    };
+    window.addMaterial = function() {
+        const input = document.getElementById('new-material');
+        const val = input.value.trim();
+        if (val && !materials.includes(val)) { materials.push(val); updateMaterials(); renderAdminLists(); }
+        input.value = '';
+    };
+    window.removeMaterial = function(name) {
+        materials = materials.filter(m => m !== name);
+        updateMaterials(); renderAdminLists();
+    };
+
+    // ----- Add entry -----
+    document.getElementById('packaging-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const weight = parseFloat(document.getElementById('unit-weight').value);
+        const qty = parseInt(document.getElementById('qty').value);
+        if (isNaN(weight) || isNaN(qty) || weight <= 0 || qty <= 0) { alert('Please enter valid weight and quantity.'); return; }
+        const total = weight * qty;
+        const stream = document.getElementById('stream').value;
+        const entry = {
+            ref: document.getElementById('ref').value || 'N/A',
+            dept: document.getElementById('department').value,
+            type: document.getElementById('pack-type').value,
+            material: document.getElementById('material').value,
+            stream: stream,
+            unitWeight: weight,
+            qty: qty,
+            totalWeight: total
+        };
+        entries.push(entry);
+        if (stream === 'Non-Household') b2bTotal += total;
+        else householdTotal += total;
+        updateDashboard();
+        this.reset();
+        renderDepts(); // restore depts after reset
+    });
+
+    function updateDashboard() {
+        document.getElementById('total-weight').innerText = (b2bTotal + householdTotal).toFixed(2) + ' kg';
+        document.getElementById('b2b-weight').innerText = b2bTotal.toFixed(2) + ' kg';
+        document.getElementById('household-weight').innerText = householdTotal.toFixed(2) + ' kg';
+        chart.data.datasets[0].data = [b2bTotal, householdTotal];
+        chart.update();
+
+        ledgerBody.innerHTML = '';
+        entries.slice().reverse().forEach(e => {
+            const streamLabel = e.stream === 'Non-Household' ? '🏢 B2B' : '🏠 HH';
+            ledgerBody.innerHTML += `<tr>
+                <td><strong>${e.ref}</strong></td>
+                <td>${e.dept}</td>
+                <td>${e.type}</td>
+                <td>${e.material}</td>
+                <td><span class="ledger-stream">${streamLabel}</span></td>
+                <td>${e.totalWeight.toFixed(1)}</td>
+            </tr>`;
+        });
+    }
+
+    // ----- Export CSV -----
+    window.exportCSV = function() {
+        if (entries.length === 0) return alert('No data to export.');
+        let csv = 'Reference,Department,Packaging Type,Material,Stream,Unit Weight(kg),Quantity,Total Weight(kg)\n';
+        entries.forEach(e => {
+            csv += `${e.ref},${e.dept},${e.type},${e.material},${e.stream},${e.unitWeight},${e.qty},${e.totalWeight}\n`;
+        });
+        const uri = encodeURI('data:text/csv;charset=utf-8,' + csv);
+        const link = document.createElement('a');
+        link.setAttribute('href', uri);
+        link.setAttribute('download', 'pEPR_Packaging_Data.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // ----- Init -----
+    renderDepts();
+    renderAdminLists();
+    updateMaterials();
+    // optional sample entry to show UI
+    // (none, keep empty)
+</script>
+</body>
+</html>
