@@ -173,15 +173,18 @@
         .btn-import:active { background: #1e8449; }
         .btn-delete { background: #c0392b; border: none; color: white; border-radius: 30px; padding: 2px 10px; font-size: 0.7rem; cursor: pointer; font-weight: 600; }
         .btn-delete:active { background: #922b21; }
+        .btn-small { background: #c0392b; border: none; color: white; border-radius: 30px; padding: 2px 10px; font-size: 0.6rem; cursor: pointer; font-weight: 600; }
+        .btn-small:active { background: #922b21; }
         .table-wrap { overflow-x: auto; margin-top: 8px; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; font-size: 0.75rem; min-width: 420px; }
         th { background: #e9eef2; color: #1f3a4b; font-weight: 600; padding: 10px 6px; text-align: left; white-space: nowrap; }
         td { padding: 10px 6px; border-bottom: 1px solid #eef3f6; vertical-align: middle; }
         .ledger-stream { font-weight: 600; font-size: 0.7rem; padding: 3px 8px; border-radius: 30px; background: #ecf0f3; white-space: nowrap; }
         .admin-section { margin-top: 24px; border-top: 2px dashed #d0d9e0; padding-top: 18px; }
-        .admin-grid { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
         .admin-card { background: #f6f9fb; padding: 14px 12px; border-radius: 16px; }
-        .admin-card h4 { font-size: 0.9rem; margin: 0 0 8px 0; color: #1f3a4b; }
+        .admin-card h4 { font-size: 0.9rem; margin: 0 0 8px 0; color: #1f3a4b; display: flex; align-items: center; gap: 8px; }
+        .admin-card h4 select { width: auto; padding: 4px 24px 4px 8px; font-size: 0.75rem; margin: 0; flex: 1; }
         .flex-row { display: flex; gap: 8px; align-items: center; }
         .flex-row input { flex: 1; padding: 10px 12px; font-size: 0.9rem; border-radius: 30px; background: white; }
         .flex-row button { background: #1f3a4b; border: none; color: white; font-size: 1.2rem; width: 44px; height: 44px; border-radius: 30px; cursor: pointer; font-weight: 600; flex-shrink: 0; transition: 0.15s; }
@@ -202,6 +205,7 @@
             .box h3 { font-size: 0.6rem; }
             .box { padding: 10px 4px; min-width: 80px; }
             .btn-export, .btn-import { font-size: 0.75rem; padding: 8px 14px; }
+            .admin-grid { grid-template-columns: 1fr; }
         }
         @media (max-width: 400px) {
             .chart-grid { grid-template-columns: 1fr; gap: 20px; }
@@ -291,15 +295,23 @@
     <div class="admin-section">
         <h2 style="font-size:1.1rem;">⚙️ Admin</h2>
         <div class="admin-grid">
-            <div class="admin-card"><h4>Departments</h4>
+            <div class="admin-card">
+                <h4>Departments</h4>
                 <div class="flex-row"><input type="text" id="new-dept" placeholder="New dept"><button onclick="addDept()">+</button></div>
                 <ul id="dept-list"></ul>
             </div>
-            <div class="admin-card"><h4>Packaging types</h4>
-                <div class="flex-row"><input type="text" id="new-pack" placeholder="New type"><button onclick="addPackType()">+</button></div>
+            <div class="admin-card">
+                <h4>
+                    Packaging Types
+                    <select id="admin-dept-select" onchange="renderAdminPackTypes()">
+                        <!-- Populated dynamically -->
+                    </select>
+                </h4>
+                <div class="flex-row"><input type="text" id="new-pack" placeholder="New type for selected dept"><button onclick="addPackType()">+</button></div>
                 <ul id="pack-list"></ul>
             </div>
-            <div class="admin-card"><h4>Materials</h4>
+            <div class="admin-card">
+                <h4>Materials</h4>
                 <div class="flex-row"><input type="text" id="new-material" placeholder="New material"><button onclick="addMaterial()">+</button></div>
                 <ul id="material-list"></ul>
             </div>
@@ -323,9 +335,9 @@
     let depts = ['Track', 'Fencing', 'Gates', 'Telegraph Poles'];
     let packTypes = {
         'Track': ['Metal Banding', 'Wooden Bearers', 'Lathes', 'Label', 'Staple', 'Metal Tag'],
-        'Fencing': ['Metal Banding', 'Plastic Banding', 'Cloth Banding', 'Wooden Bearer (Untreated)', 'Wooden Bearer (Treated)', 'Nail', 'Staple', 'Label', 'Untreated Lathes', 'Treated Lathes', 'Wooden Stillage Supports (Frames)'],
-        'Gates': ['Wooden Packers', 'Plastic Banding', 'Wooden Bearer', 'Label', 'Nail'],
-        'Telegraph Poles': ['Label', 'Steel Butt Tag', 'Nail', 'Staple', 'Plastic Banding', 'Metal Banding', 'Cloth Strapping']
+        'Fencing': ['Metal Banding', 'Plastic Banding', 'Cloth Banding', 'Wooden Bearers (Untreated)', 'Wooden Bearers (Treated)', 'Nails', 'Staples', 'Labels', 'Untreated Lathes', 'Treated Lathes', 'Wooden Stillage Supports (Frames)'],
+        'Gates': ['Wooden Packers', 'Plastic Banding', 'Wooden Bearers', 'Label', 'Nails'],
+        'Telegraph Poles': ['Labels', 'Steel butt tag', 'Ring Shank Nail', 'Staples', 'Plastic Strapping', 'Metal Strapping', 'Cloth Strapping']
     };
     let materials = ['Wood', 'Metal', 'Plastic', 'Textile', 'Paper/Cardboard', 'Paper / Plastic', 'Untreated', 'Treated'];
     let entries = [];
@@ -379,19 +391,14 @@
 
     // ----- Helper: Generate chart data with percentages, sorted desc, capped at 8 -----
     function prepareChartData(dataMap) {
-        // Convert to array of [label, value] pairs
         let items = Object.entries(dataMap);
-        // Sort by value descending
         items.sort((a, b) => b[1] - a[1]);
         
         const total = items.reduce((sum, item) => sum + item[1], 0);
-        
-        // Cap at 8 items
         const capped = items.slice(0, 8);
         const remaining = items.slice(8);
         const remainingTotal = remaining.reduce((sum, item) => sum + item[1], 0);
         
-        // Build labels with percentages
         let labels = capped.map(([label, value]) => {
             const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
             return `${label} ${pct}%`;
@@ -400,7 +407,6 @@
         let data = capped.map(([_, value]) => value);
         let colors = chartColors.slice(0, capped.length);
         
-        // Add "Other" category if there are more than 8 items
         if (remaining.length > 0) {
             const pct = total > 0 ? ((remainingTotal / total) * 100).toFixed(1) : 0;
             labels.push(`Other (${remaining.length} items) ${pct}%`);
@@ -463,7 +469,6 @@
             onClick: (e, elements) => {
                 if (elements.length > 0) {
                     const index = elements[0].index;
-                    // Get the raw label (without percentage)
                     const fullLabel = materialChart.data.labels[index];
                     const label = fullLabel.split(' ').slice(0, -1).join(' ');
                     if (label && label !== 'No Data' && label !== 'Other') {
@@ -477,7 +482,7 @@
         }
     });
 
-    // ----- FIXED: Reset drill function -----
+    // ----- Reset drill function -----
     window.resetMaterialDrill = function() {
         drillMaterial = null;
         document.getElementById('drillBackBtn').style.display = 'none';
@@ -499,72 +504,182 @@
     // ----- Render dropdowns -----
     function renderDepts() {
         deptSelect.innerHTML = '';
-        depts.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.textContent = d; deptSelect.appendChild(opt); });
+        depts.forEach(d => { 
+            const opt = document.createElement('option'); 
+            opt.value = d; 
+            opt.textContent = d; 
+            deptSelect.appendChild(opt); 
+        });
+        // Also update admin department dropdown
+        const adminDeptSelect = document.getElementById('admin-dept-select');
+        adminDeptSelect.innerHTML = '';
+        depts.forEach(d => { 
+            const opt = document.createElement('option'); 
+            opt.value = d; 
+            opt.textContent = d; 
+            adminDeptSelect.appendChild(opt); 
+        });
         updatePackTypes();
+        renderAdminPackTypes();
     }
+    
     function updatePackTypes() {
         const dept = deptSelect.value;
         const types = packTypes[dept] || [];
         packSelect.innerHTML = '';
-        if (types.length === 0) { const opt = document.createElement('option'); opt.value = ''; opt.textContent = '— no types —'; packSelect.appendChild(opt); }
-        else { types.forEach(t => { const opt = document.createElement('option'); opt.value = t; opt.textContent = t; packSelect.appendChild(opt); }); }
+        if (types.length === 0) { 
+            const opt = document.createElement('option'); 
+            opt.value = ''; 
+            opt.textContent = '— no types —'; 
+            packSelect.appendChild(opt); 
+        } else { 
+            types.forEach(t => { 
+                const opt = document.createElement('option'); 
+                opt.value = t; 
+                opt.textContent = t; 
+                packSelect.appendChild(opt); 
+            }); 
+        }
         updateMaterials();
     }
+    
+    function renderAdminPackTypes() {
+        const adminDept = document.getElementById('admin-dept-select').value;
+        const types = packTypes[adminDept] || [];
+        const packList = document.getElementById('pack-list');
+        packList.innerHTML = '';
+        if (types.length === 0) {
+            const li = document.createElement('li');
+            li.innerHTML = `<span style="color:#95a5a6; font-size:0.75rem;">No types for this department</span>`;
+            packList.appendChild(li);
+        } else {
+            types.forEach(t => { 
+                const li = document.createElement('li'); 
+                li.innerHTML = `<span>${t}</span> <button onclick="removePackType('${adminDept}', '${t}')">✕</button>`; 
+                packList.appendChild(li); 
+            });
+        }
+    }
+    
     function updateMaterials() {
         materialSelect.innerHTML = '';
-        materials.forEach(m => { const opt = document.createElement('option'); opt.value = m; opt.textContent = m; materialSelect.appendChild(opt); });
+        materials.forEach(m => { 
+            const opt = document.createElement('option'); 
+            opt.value = m; 
+            opt.textContent = m; 
+            materialSelect.appendChild(opt); 
+        });
     }
+    
     deptSelect.addEventListener('change', updatePackTypes);
 
     // ----- Admin UI -----
     function renderAdminLists() {
         const deptList = document.getElementById('dept-list');
         deptList.innerHTML = '';
-        depts.forEach(d => { const li = document.createElement('li'); li.innerHTML = `<span>${d}</span> <button onclick="removeDept('${d}')">✕</button>`; deptList.appendChild(li); });
-        const packList = document.getElementById('pack-list');
-        packList.innerHTML = '';
-        const allPacks = new Set();
-        Object.values(packTypes).forEach(arr => arr.forEach(p => allPacks.add(p)));
-        allPacks.forEach(p => { const li = document.createElement('li'); li.innerHTML = `<span>${p}</span> <button onclick="removePackType('${p}')">✕</button>`; packList.appendChild(li); });
+        depts.forEach(d => { 
+            const li = document.createElement('li'); 
+            li.innerHTML = `<span>${d}</span> <button onclick="removeDept('${d}')">✕</button>`; 
+            deptList.appendChild(li); 
+        });
+        
+        renderAdminPackTypes();
+        
         const matList = document.getElementById('material-list');
         matList.innerHTML = '';
-        materials.forEach(m => { const li = document.createElement('li'); li.innerHTML = `<span>${m}</span> <button onclick="removeMaterial('${m}')">✕</button>`; matList.appendChild(li); });
+        materials.forEach(m => { 
+            const li = document.createElement('li'); 
+            li.innerHTML = `<span>${m}</span> <button onclick="removeMaterial('${m}')">✕</button>`; 
+            matList.appendChild(li); 
+        });
     }
 
     // ----- Admin actions -----
     window.addDept = function() {
         const input = document.getElementById('new-dept');
         const val = input.value.trim();
-        if (val && !depts.includes(val)) { depts.push(val); packTypes[val] = []; renderDepts(); renderAdminLists(); saveData(); showToast('✅ Department added'); }
-        input.value = '';
-    };
-    window.removeDept = function(name) {
-        depts = depts.filter(d => d !== name);
-        delete packTypes[name];
-        renderDepts(); renderAdminLists(); saveData(); showToast('🗑 Department removed');
-    };
-    window.addPackType = function() {
-        const input = document.getElementById('new-pack');
-        const val = input.value.trim();
-        if (val) {
-            Object.keys(packTypes).forEach(d => { if (!packTypes[d].includes(val)) packTypes[d].push(val); });
-            updatePackTypes(); renderAdminLists(); saveData(); showToast('✅ Packaging type added');
+        if (val && !depts.includes(val)) { 
+            depts.push(val); 
+            packTypes[val] = []; 
+            renderDepts(); 
+            renderAdminLists(); 
+            saveData(); 
+            showToast('✅ Department added'); 
         }
         input.value = '';
     };
-    window.removePackType = function(name) {
-        Object.keys(packTypes).forEach(d => { packTypes[d] = packTypes[d].filter(p => p !== name); });
-        updatePackTypes(); renderAdminLists(); saveData(); showToast('🗑 Packaging type removed');
+    
+    window.removeDept = function(name) {
+        if (confirm(`Remove department "${name}" and all its packaging types?`)) {
+            depts = depts.filter(d => d !== name);
+            delete packTypes[name];
+            renderDepts(); 
+            renderAdminLists(); 
+            saveData(); 
+            showToast('🗑 Department removed');
+        }
     };
+    
+    window.addPackType = function() {
+        const input = document.getElementById('new-pack');
+        const val = input.value.trim();
+        const adminDept = document.getElementById('admin-dept-select').value;
+        
+        if (val && adminDept) {
+            if (!packTypes[adminDept]) {
+                packTypes[adminDept] = [];
+            }
+            if (!packTypes[adminDept].includes(val)) {
+                packTypes[adminDept].push(val);
+                // Also add to the main form's dropdown if this department is selected
+                if (deptSelect.value === adminDept) {
+                    updatePackTypes();
+                }
+                renderAdminPackTypes();
+                saveData();
+                showToast(`✅ Packaging type added to ${adminDept}`);
+            } else {
+                showToast('⚠️ This type already exists for this department');
+            }
+        } else {
+            showToast('⚠️ Please select a department and enter a type');
+        }
+        input.value = '';
+    };
+    
+    window.removePackType = function(dept, name) {
+        if (confirm(`Remove "${name}" from ${dept}?`)) {
+            if (packTypes[dept]) {
+                packTypes[dept] = packTypes[dept].filter(p => p !== name);
+                if (deptSelect.value === dept) {
+                    updatePackTypes();
+                }
+                renderAdminPackTypes();
+                saveData();
+                showToast(`🗑 Packaging type removed from ${dept}`);
+            }
+        }
+    };
+    
     window.addMaterial = function() {
         const input = document.getElementById('new-material');
         const val = input.value.trim();
-        if (val && !materials.includes(val)) { materials.push(val); updateMaterials(); renderAdminLists(); saveData(); showToast('✅ Material added'); }
+        if (val && !materials.includes(val)) { 
+            materials.push(val); 
+            updateMaterials(); 
+            renderAdminLists(); 
+            saveData(); 
+            showToast('✅ Material added'); 
+        }
         input.value = '';
     };
+    
     window.removeMaterial = function(name) {
         materials = materials.filter(m => m !== name);
-        updateMaterials(); renderAdminLists(); saveData(); showToast('🗑 Material removed');
+        updateMaterials(); 
+        renderAdminLists(); 
+        saveData(); 
+        showToast('🗑 Material removed');
     };
 
     // ----- Delete single entry -----
@@ -619,7 +734,6 @@
                 const lines = text.split('\n');
                 const headers = lines[0].split(',').map(h => h.trim());
                 
-                // Find column indices
                 const refIdx = headers.indexOf('Reference');
                 const deptIdx = headers.indexOf('Department');
                 const typeIdx = headers.indexOf('Packaging Type');
@@ -666,7 +780,6 @@
                     return;
                 }
                 
-                // Merge with existing entries (avoid duplicates by checking ref+dept+type+material+weight)
                 const existingKeys = new Set(entries.map(e => `${e.ref}|${e.dept}|${e.type}|${e.material}|${e.totalWeight}`));
                 let added = 0;
                 newEntries.forEach(e => {
@@ -688,18 +801,16 @@
             }
         };
         reader.readAsText(file);
-        event.target.value = ''; // Reset file input
+        event.target.value = '';
     };
 
     // ----- Update Dashboard -----
     function updateDashboard() {
-        // Update summary boxes
         document.getElementById('total-weight').innerText = (b2bTotal + householdTotal).toFixed(2) + ' kg';
         document.getElementById('b2b-weight').innerText = b2bTotal.toFixed(2) + ' kg';
         document.getElementById('household-weight').innerText = householdTotal.toFixed(2) + ' kg';
         entryCount.textContent = `(${entries.length} entries)`;
 
-        // Ledger with delete button
         ledgerBody.innerHTML = '';
         if (entries.length === 0) {
             ledgerBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#6a7f8d; padding:20px;">No entries yet. Add your first packaging record above.</td></tr>`;
@@ -718,13 +829,12 @@
             });
         }
 
-        // Always update charts after any change
         updateCharts();
     }
 
-    // ----- Chart update with percentages, sorted, capped at 8 -----
+    // ----- Chart update -----
     function updateCharts() {
-        // --- Department chart ---
+        // Department chart
         const deptTotals = {};
         entries.forEach(e => {
             deptTotals[e.dept] = (deptTotals[e.dept] || 0) + e.totalWeight;
@@ -741,7 +851,7 @@
         }
         deptChart.update();
 
-        // --- Packaging Type Chart ---
+        // Packaging Type Chart
         const typeTotals = {};
         entries.forEach(e => {
             typeTotals[e.type] = (typeTotals[e.type] || 0) + e.totalWeight;
@@ -760,7 +870,7 @@
         }
         packTypeChart.update();
 
-        // --- Material Chart with drill ---
+        // Material Chart with drill
         let filteredEntries = entries;
         if (drillMaterial) {
             filteredEntries = entries.filter(e => e.material === drillMaterial);
@@ -778,7 +888,6 @@
             return;
         }
 
-        // Aggregate: if drill is active, show packaging types within that material
         const agg = {};
         filteredEntries.forEach(e => {
             const key = drillMaterial ? e.type : e.material;
@@ -791,13 +900,11 @@
         materialChart.data.datasets[0].backgroundColor = materialData.colors;
         materialChart.update();
 
-        // Update title with drill info
         let titleText = drillMaterial ? `📌 ${drillMaterial} (packaging types)` : `Materials (${Object.keys(agg).length})`;
         document.getElementById('materialDrillTitle').innerHTML = titleText + 
             (drillMaterial ? ` <button class="btn-back" id="drillBackBtn" onclick="resetMaterialDrill()">↩ Back</button>` : 
             ` <button class="btn-back" id="drillBackBtn" style="display:none;" onclick="resetMaterialDrill()">↩ Back</button>`);
         
-        // Show/hide back button
         const backBtn = document.getElementById('drillBackBtn');
         if (drillMaterial) {
             backBtn.style.display = 'inline-block';
